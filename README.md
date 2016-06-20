@@ -28,3 +28,7 @@ Slackmine should now show up in your Slack-Team.
 ## Running tests
 
      $ mix test
+
+## Build docs
+
+     $ mix docs

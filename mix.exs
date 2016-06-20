@@ -3,11 +3,14 @@ defmodule Slackmine.Mixfile do
 
   def project do
     [app: :slackmine,
+     name: "Slackmine",
+     source_url: "https://github.com/kioopi/slackmine",
      version: "0.0.1",
      elixir: "~> 1.2",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
-     deps: deps]
+     deps: deps,
+     docs: [extras: ["README.md", "LICENSE.md"]]]
   end
 
   # Configuration for the OTP application
@@ -33,7 +36,9 @@ defmodule Slackmine.Mixfile do
       {:slack, "~> 0.5.0"},  # Slack Client
       {:websocket_client, git: "https://github.com/jeremyong/websocket_client"},
       {:httpotion, "~> 3.0.0"}, # HTTP Requests
-      {:poison, "~> 2.0"} # JSON Parser
+      {:poison, "~> 2.0"}, # JSON Parser
+
+      {:ex_doc, "~> 0.11", only: :dev}
     ]
   end
 end
