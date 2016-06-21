@@ -1,26 +1,26 @@
 defmodule Slackmine.Redmine do
-  alias Slackmine.Redmine.Data
-
+  @moduledoc """
+  Fetches information about Redmine issues via http and sends them back to a process.
+  """
   @callback issue(from :: pid, id :: String.t) :: {:ok, pid}
   @doc """
   Starts get_issue_data/2 as an async Task to fetch data from Redmine passing it the pid to send the result to and the issue ID in question.
   """
-  def issue(from, id) do
-    Task.start(__MODULE__, :get_issue_data, [from, id])
+  def issue(from, id, client\\Slackmine.Redmine.Data) do
+    Task.start(__MODULE__, :get_issue_data, [from, id, client])
   end
 
-  def get_issue_data(from, id) do
-    case Data.get_issue(id) do
-      {:ok, issue} -> send_issue(issue, from)
-      {:error, reason} -> send_issue_failed(id, reason, from)
-      _ -> send_issue_failed(id, from)
-		end
+  @doc """
+  Uses the data module to get a struct descriping an isssue and passes it on to a
+  funcion that informs the pid that requested the issue about success or failure.
+  """
+  def get_issue_data(from, id, client\\Slackmine.Redmine.Data) do
+    client.get_issue(id) |> send_issue(from, id)
   end
 
-  def send_issue(issue, pid), do: send(pid, {:issue, issue})
-
-  def send_issue_failed(id, pid), do: send(pid, {:issue_failed, id})
-  def send_issue_failed(id, reason, pid), do: send(pid, {:issue_failed, id, reason})
+  def send_issue({:ok, issue}, pid, _id), do: send(pid, {:issue, issue})
+  def send_issue({:error, reason}, pid, id), do: send(pid, {:issue_failed, id, reason})
+  def send_issue({:error}, pid, id), do:  send(pid, {:issue_failed, id})
 
   defmodule CLI do
     @moduledoc """
@@ -55,15 +55,6 @@ defmodule Slackmine.Redmine.Test do
   alias Slackmine.Redmine.SelectItem
 
   def issue(from, _id) do
-    send(from, {:issue, %Issue{
-       author: %User{id: 173, name: "The Author"},
-       created_on: "2016-03-16T10:55:14Z",
-       description: "Description Text of the issue\r\n",
-       id: 12345,
-       link: "https://redmine.codevise.de/issues/12345",
-       priority: %SelectItem{id: 4, name: "Normal"},
-       status: %SelectItem{id: 3, name: "Resolved"},
-       subject: "Title of the issue"}
-   })
+    send(from, {:issue, Slackmine.Redmine.Issue.example})
   end
 end

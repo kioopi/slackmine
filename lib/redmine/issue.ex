@@ -32,6 +32,21 @@ defmodule Slackmine.Redmine.Issue do
     Map.get("issue") |>
     Slackmine.Redmine.Issue.add_link
   end
+
+
+  def example do
+    %Slackmine.Redmine.Issue{
+      author: %Redmine.User{id: 173, name: "The Author"},
+      created_on: "2016-03-16T10:55:14Z",
+      description: "Description Text of the issue\r\n",
+      id: 12345,
+      link: "https://redmine.codevise.de/issues/12345",
+      priority: %Redmine.SelectItem{id: 4, name: "Normal"},
+      status: %Redmine.SelectItem{id: 3, name: "Resolved"},
+      subject: "Title of the issue"
+    }
+  end
+
 end
 
 # Implement Chars Protocol so that Issue can be uses with
