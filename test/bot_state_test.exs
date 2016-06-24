@@ -1,7 +1,7 @@
-defmodule SlackStateTest do
+defmodule BotStateTest do
   use ExUnit.Case
-  doctest Slackmine.Slack.State
-  alias Slackmine.Slack.State
+  doctest Slackmine.Bot.State
+  alias Slackmine.Bot.State
 
   test "mark_issue_as_pending puts channels waiting for issue into state " do
     state = %{pending_issues: %{}}

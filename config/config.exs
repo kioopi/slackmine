@@ -23,7 +23,4 @@ use Mix.Config
 #
 #
 
-config(:slackmine, Slackmine.Slack, redmine_api: Slackmine.Redmine)
-
 import_config "#{Mix.env}.exs"
-import_config "secrets.exs"

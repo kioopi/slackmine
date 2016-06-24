@@ -1,3 +1,23 @@
+defmodule Slackmine.Slack.WithName do
+  def start_link(name, bot) do
+    {:ok, pid} = Slackmine.Slack.start_link(bot)
+    Process.register(pid, name)
+    {:ok, pid}
+  end
+end
+
+defmodule Slackmine.Slack.Mock do
+  def start_link(_name, _bot) do
+    {:ok, self()}
+  end
+
+  def message(_channels, _msg) do
+  end
+
+  def typing(_channels, _msg) do
+  end
+end
+
 defmodule Slackmine.Slack do
   @moduledoc """
   This is the interface to the Slack chat.
@@ -5,58 +25,16 @@ defmodule Slackmine.Slack do
   Messages in slack arrive in the handle_message/3 function.
   """
   use Slack
-  alias Slackmine.Slack.State
 
   @token Application.get_env(:slackmine, __MODULE__)[:token]
-  @redmine_api Application.get_env(:slackmine, __MODULE__)[:redmine_api]
 
   @doc """
   Starts the process that listens to slack messages.
 
   Called by the Supervisor in `lib/slackmine.ex` when the applicatoin starts.
   """
-  def start_link do
-    start_link(@token, State.initial)
-  end
-
-  @doc """
-  Requests data about an Issue from Redmine.
-
-  Returns new state object with issue marked as pending for channel.
-  """
-  def get_issue(id, channel, slack, state) do
-    indicate_typing(channel, slack)
-    @redmine_api.issue(self(), id)
-    State.mark_issue_as_pending(state, id, channel)
-  end
-
-  def get_issues(ids, channel, slack, state) do
-    Enum.reduce(ids, state, fn(id, state) -> get_issue(id, channel, slack, state) end)
-  end
-
-  @doc """
-  Parses potential Redmine issue-ids from a string.
-
-  Returns list of ids as strings.
-
-  ## Examples
-
-      iex> Slackmine.Slack.parse_issue_ids("Whats with #12345")
-      ["12345"]
-  """
-  def parse_issue_ids(text) do
-    for list <- Regex.scan(~r/#(\d+)/, text, capture: :all_but_first), do: hd(list)
-  end
-
-  @doc """
-  Sends a message about an issue to a list of slack channels.
-
-  Returns new state with the issue removed from prending_issues map.
-  """
-  def slack_issue(id, msg, slack, state) do
-    State.get_channels_for_pending_issue(state, id) |>
-    slack_msg(to_string(msg), slack)
-    {:ok, State.remove_pending_issue(state, id)}
+  def start_link(bot) do
+    start_link(@token, %{bot: bot})
   end
 
   @doc """
@@ -64,10 +42,14 @@ defmodule Slackmine.Slack do
 
   Returns `:ok`
   """
-  def slack_msg([], _msg, _slack), do: :ok
-  def slack_msg([chan|channels], msg, slack) do
-    send_message(msg, chan, slack)
-    slack_msg(channels, msg, slack)
+  def message([], _msg), do: :ok
+  def message([chan|channels], msg) do
+    send(Slackmine.Slack, {:send, chan, msg})
+    message(channels, msg)
+  end
+
+  def typing(channel) do
+    send(Slackmine.Slack, {:typing, channel})
   end
 
   ## callbacks
@@ -77,26 +59,22 @@ defmodule Slackmine.Slack do
 
   Returns `{:ok, state}` with an updated state object.
   """
-  def handle_message(%{type: "message", text: text, channel: channel}, slack, state) do
-    case parse_issue_ids(text) do
-      [] -> {:ok, state}
-      issue_ids -> {:ok, get_issues(issue_ids, channel, slack, state)}
-    end
+  def handle_message(%{type: "message", text: text, channel: channel}, _slack, state = %{bot: bot}) do
+    send(bot, {:message, %{channel: channel, text: text}})
+    {:ok, state}
   end
   def handle_message(_message, _slack, state), do: {:ok, state}
 
-  # Slackmine.Redmine sends message {:issue, %Issue{}} when issue is
-  # retrieved from redmine
-  def handle_info({:issue, issue}, slack, state) do
-    slack_issue(issue.id, issue, slack, state)
+  def handle_info({:send, channel, text}, slack, state) do
+    send_message(text, channel, slack)
+    {:ok, state}
   end
 
-  def handle_info({:issue_failed, id}, slack, state) do
-    slack_issue(id, "Could not get info on issue #{id}, sorry.", slack, state)
+  def handle_info({:typing, channel}, slack, state) do
+    indicate_typing(channel, slack)
+    {:ok, state}
   end
-  def handle_info({:issue_failed, id, reason}, slack, state) do
-    slack_issue(id, "Could not get info on issue #{id} because of #{reason}.", slack, state)
-  end
+
 
   # fixme
 

@@ -1,4 +1,4 @@
-defmodule Slackmine.Slack.State do
+defmodule Slackmine.Bot.State do
   @moduledoc """
   Slackmine.Slack.State deals with the state map used by the Slackmine.Slack module.
 

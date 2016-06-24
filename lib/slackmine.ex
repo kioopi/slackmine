@@ -1,14 +1,16 @@
 defmodule Slackmine do
   use Application
 
+  @slack_api Application.get_env(:slackmine, Slackmine.Slack)[:slack_api]
+
   # See http://elixir-lang.org/docs/stable/elixir/Application.html
   # for more information on OTP Applications
   def start(_type, _args) do
     import Supervisor.Spec, warn: false
 
     children = [
-      # Define workers and child supervisors to be supervised
-      worker(Slackmine.Slack, [])
+      worker(@slack_api, [Slackmine.Slack, Slackmine.Bot]),
+      worker(Slackmine.Bot, [Slackmine.Bot, Slackmine.Slack])
     ]
 
     # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html

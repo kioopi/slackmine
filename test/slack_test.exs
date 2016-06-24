@@ -8,15 +8,9 @@ defmodule SlackTest do
     end
   end
 
-  test "parse_issue_ids" do
-    assert Slackmine.Slack.parse_issue_ids("No Issue ID") == []
-    assert Slackmine.Slack.parse_issue_ids("#123") == ["123"]
-    assert Slackmine.Slack.parse_issue_ids("An ID in #1234 a sentece.") == ["1234"]
-    assert Slackmine.Slack.parse_issue_ids("#12,#34") == ["12", "34"]
-  end
+  test "Sends a message to the Bot" do
+    Slackmine.Slack.handle_message(%{type: "message", text: "Hello", channel: "CHAN"}, %{}, %{bot: self()})
 
-  test "get_issue adds id and channel to pending issues" do
-    new_state = Slackmine.Slack.get_issue("1", "CHAN", %{socket: nil, client: FakeWebsocketClient}, Slackmine.Slack.State.initial)
-    assert new_state == %{pending_issues: %{ "1" => ["CHAN"] }}
+    assert_receive({:message, %{channel: "CHAN", text: "Hello"}})
   end
 end

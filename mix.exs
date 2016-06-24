@@ -33,7 +33,7 @@ defmodule Slackmine.Mixfile do
   # Type "mix help deps" for more examples and options
   defp deps do
     [
-      {:slack, "~> 0.5.0"},  # Slack Client
+      {:slack, "~> 0.6.0"},  # Slack Client
       {:websocket_client, git: "https://github.com/jeremyong/websocket_client"},
       {:httpotion, "~> 3.0.0"}, # HTTP Requests
       {:poison, "~> 2.0"}, # JSON Parser
