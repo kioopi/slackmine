@@ -1,4 +1,14 @@
 defmodule Slackmine.Bot do
+  @moduledoc """
+  Contains the main logic and is the interface between Slackmine.Slack
+  and Slackmine.Redmine.
+
+  Gets send :message -messages by Slackmine.Slack containing chat-messages.
+  Uses the API of Slacmine.Redmine to request info about issues.
+  Issues arrive as :issue -messages from Slackmine.Redmine.
+
+  """
+
   use GenServer
   alias Slackmine.Bot.State
 

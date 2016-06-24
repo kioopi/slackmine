@@ -33,7 +33,6 @@ defmodule Slackmine.Redmine.Issue do
     Slackmine.Redmine.Issue.add_link
   end
 
-
   def example do
     %Slackmine.Redmine.Issue{
       author: %Redmine.User{id: 173, name: "The Author"},
@@ -46,7 +45,6 @@ defmodule Slackmine.Redmine.Issue do
       subject: "Title of the issue"
     }
   end
-
 end
 
 # Implement Chars Protocol so that Issue can be uses with
