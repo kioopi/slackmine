@@ -73,6 +73,7 @@ defmodule Slackmine.Slack do
   def is_direct_message?(%{text: text}, slack) do
     String.starts_with?(text, bot_name_string(slack))
   end
+  def is_direct_message?(msg, slack), do: false
 
   def cut_bot_name(text, slack) do
     String.slice(text, String.length(bot_name_string(slack)), 1000) |>
@@ -87,7 +88,7 @@ defmodule Slackmine.Slack do
 
   Returns `{:ok, state}` with an updated state object.
   """
-  def handle_message(message = %{type: "message"}, slack, state = %{bot: bot}) do
+  def handle_message(message = %{type: "message", user: user}, slack = %{me: %{ id: botuser}}, state = %{bot: bot}) when user != botuser  do
     if is_direct_message?(message, slack) do
       direct_message(message, slack, bot)
     else
