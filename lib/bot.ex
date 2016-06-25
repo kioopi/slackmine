@@ -70,6 +70,11 @@ defmodule Slackmine.Bot do
     end
   end
 
+  def handle_info({:direct_message, %{channel: channel, text: text, user: user}}, state) do
+    @slack_api.message([channel], text <> "?")
+    {:noreply, state}
+  end
+
   # Slackmine.Redmine sends message {:issue, %Issue{}} when issue is
   # retrieved from redmine
   def handle_info({:issue, issue}, state) do
