@@ -61,6 +61,25 @@ defmodule Slackmine.Slack do
     send(Slackmine.Slack, {:typing, channel})
   end
 
+  def direct_message(%{text: text, channel: chan, user: user}, slack, bot) do
+    username = Slack.Lookups.lookup_user_name(user, slack)
+    send(bot, {:direct_message, %{channel: chan, text: cut_bot_name(text, slack), user: username}})
+  end
+
+  def bot_name_string(%{me: %{ id: id}}) do
+    "<@#{id}>"
+  end
+
+  def is_direct_message?(%{text: text}, slack) do
+    String.starts_with?(text, bot_name_string(slack))
+  end
+
+  def cut_bot_name(text, slack) do
+    String.slice(text, String.length(bot_name_string(slack)), 1000) |>
+    String.trim(":") |>
+    String.trim
+  end
+
   ## callbacks
 
   @doc """
@@ -68,8 +87,13 @@ defmodule Slackmine.Slack do
 
   Returns `{:ok, state}` with an updated state object.
   """
-  def handle_message(%{type: "message", text: text, channel: channel}, _slack, state = %{bot: bot}) do
-    send(bot, {:message, %{channel: channel, text: text}})
+  def handle_message(message = %{type: "message"}, slack, state = %{bot: bot}) do
+    if is_direct_message?(message, slack) do
+      direct_message(message, slack, bot)
+    else
+      send(bot, {:message, message})
+    end
+
     {:ok, state}
   end
   def handle_message(_message, _slack, state), do: {:ok, state}
@@ -83,7 +107,6 @@ defmodule Slackmine.Slack do
     indicate_typing(channel, slack)
     {:ok, state}
   end
-
 
   # fixme:
 
