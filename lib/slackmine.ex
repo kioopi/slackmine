@@ -10,7 +10,8 @@ defmodule Slackmine do
 
     children = [
       worker(@slack_api, [Slackmine.Slack, Slackmine.Bot]),
-      worker(Slackmine.Bot, [Slackmine.Bot, Slackmine.Slack])
+      worker(Slackmine.Bot, [Slackmine.Bot, Slackmine.Slack]),
+      worker(Slackmine.Users, [])
     ]
 
     # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html

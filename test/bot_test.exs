@@ -13,4 +13,10 @@ defmodule BotTest do
     new_state = Slackmine.Bot.get_issue("1", "CHAN", Slackmine.Bot.State.initial)
     assert new_state == %{Slackmine.Bot.State.initial | pending_issues: %{ "1" => ["CHAN"] }}
   end
+
+  test "nl_join returns string" do
+    assert Slackmine.Bot.nl_join(["john-paul", "george", "ringo"]) == "john-paul, george and ringo"
+    assert Slackmine.Bot.nl_join(["tick", 2, "track"], "und") == "tick, 2 und track"
+    assert Slackmine.Bot.nl_join(["left", "right"], "or") == "left or right"
+  end
 end

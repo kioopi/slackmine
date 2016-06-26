@@ -13,8 +13,10 @@ defmodule Slackmine.Bot.State do
   FIXME: Should possibly become a struct in this module.
   """
   def initial do
-    %{ pending_issues: %{}, 
-      channel: nil }  # FIXME channel cant be stored as global context but each channel needs its own context.
+    %{ pending_issues: %{},
+      channel: nil,   # FIXME channel cant be stored as global context but each channel needs its own context.
+      user: nil
+    }
   end
 
   @doc """
