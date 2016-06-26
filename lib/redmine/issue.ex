@@ -1,7 +1,3 @@
-defmodule Slackmine.Redmine.User do
-  defstruct [:id, :name]
-end
-
 defmodule Slackmine.Redmine.SelectItem do
   defstruct [:id, :name]
 end
@@ -52,6 +48,6 @@ end
 # http://elixir-lang.org/docs/stable/elixir/String.Chars.html
 defimpl String.Chars, for: Slackmine.Redmine.Issue do
   def to_string(issue) do
-    "#{issue.subject}: #{issue.status.name}. -> #{issue.link}"
+    "#{issue.subject} (#{issue.author.name}): #{issue.status.name}. -> #{issue.link}"
   end
 end
