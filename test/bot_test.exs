@@ -11,6 +11,6 @@ defmodule BotTest do
 
   test "get_issue adds id and channel to pending issues" do
     new_state = Slackmine.Bot.get_issue("1", "CHAN", Slackmine.Bot.State.initial)
-    assert new_state == %{pending_issues: %{ "1" => ["CHAN"] }}
+    assert new_state == %{Slackmine.Bot.State.initial | pending_issues: %{ "1" => ["CHAN"] }}
   end
 end

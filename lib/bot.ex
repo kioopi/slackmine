@@ -70,10 +70,31 @@ defmodule Slackmine.Bot do
     end
   end
 
+  def user_search_term(text) do
+    term  = List.last(String.split(text))
+    if Regex.match?(~r/user/, term) do
+      ""
+    else
+      term
+    end
+  end
+
   def handle_info({:direct_message, %{channel: channel, text: text, user: user}}, state) do
+   if Regex.match?(~r/user/, text) do
+     @redmine_api.users(self(), user_search_term(text))
+     {:noreply, %{ state | channel: channel }}  # FIXME channel cant really be sored as global context
+   else
     @slack_api.message([channel], text <> "?")
     {:noreply, state}
+   end
   end
+
+  def slack_users([user|users], channel) do
+    @slack_api.message([channel], to_string(user))
+    slack_users(users, channel)
+  end
+  def slack_users([], channel), do: nil
+
 
   # Slackmine.Redmine sends message {:issue, %Issue{}} when issue is
   # retrieved from redmine
@@ -84,7 +105,13 @@ defmodule Slackmine.Bot do
   def handle_info({:issue_failed, id}, state) do
     slack_issue(id, "Could not get info on issue #{id}, sorry.", state)
   end
+
   def handle_info({:issue_failed, id, reason}, state) do
     slack_issue(id, "Could not get info on issue #{id} because of #{reason}.", state)
+  end
+
+  def handle_info({:users, users}, state) do
+    slack_users(users, state.channel)
+    {:noreply, state}
   end
 end
