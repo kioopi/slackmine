@@ -69,44 +69,12 @@ defmodule Slackmine.Bot do
     end
   end
 
-  def user_search_term(text) do
-    term  = List.last(String.split(text))
-    if Regex.match?(~r/user/, term) do
-      ""
-    else
-      term
-    end
-  end
-
-  def iam_search_term(text) do
-    String.spit(text) |> Enum.slice(2, 1000) |> Enum.join(" ")
-  end
-
   def handle_info({:direct_message, %{channel: channel, text: text, user: user}}, state) do
-    cond do
-      Regex.match?(~r/user/, text) ->
-        @redmine_api.users(self(), user_search_term(text))
-        {:noreply, %{ state | channel: channel }}  # FIXME channel cant really be sored as global context
-      Regex.match?(~r/i am/, text) ->
-        case Slackmine.Users.get(user) do
-          {:ok, user} -> @slack_api.message([channel], "Haven't we met before, #{user}?")
-            {:noreply, state}
-          :error -> 
-            @redmine_api.users(self(), user_search_term(text))
-            {:noreply, %{ state | channel: channel, user: user }}
-        end
-      true ->
-        @slack_api.message([channel], text <> "?")
-        {:noreply, state}
-    end
+    alias Slackmine.Command
+    commands = [ Command.Users, Command.Iam, Command.Default ]
+    Slackmine.Commands.handle_message(commands, text, channel, user)
+    {:noreply, state}
   end
-
-  def slack_users([user|users], channel) do
-    @slack_api.message([channel], to_string(user))
-    slack_users(users, channel)
-  end
-  def slack_users([], channel), do: nil
-
 
   # Slackmine.Redmine sends message {:issue, %Issue{}} when issue is
   # retrieved from redmine
@@ -120,31 +88,5 @@ defmodule Slackmine.Bot do
 
   def handle_info({:issue_failed, id, reason}, state) do
     slack_issue(id, "Could not get info on issue #{id} because of #{reason}.", state)
-  end
-
-  def handle_info({:users, users}, state = %{user: user, channel: channel}) when is_binary(user) do
-    cond do
-      length(users) == 1 ->
-        Slackmine.Users.add(user, hd(users))
-        @slack_api.message([channel], "Nice to meet you, #{hd(users)}!")
-      length(users) == 0 ->
-        @slack_api.message([channel], "User not found")
-      length(users) > 0 ->
-        @slack_api.message([channel], "Which one? #{nl_join(users, "or")}")
-    end
-    {:noreply, %{state | user: nil}}
-  end
-
-  def handle_info({:users, users}, state) do
-    slack_users(users, state.channel)
-    {:noreply, state}
-  end
-
-  def nl_join(enum, join \\ "and") do
-    first = Enum.map(enum, &to_string/1) |>
-    Enum.take(length(enum)-1) |>
-    Enum.join(", ")
-
-    Enum.join([first , List.last(enum)], " #{join} ")
   end
 end
