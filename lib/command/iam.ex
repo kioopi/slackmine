@@ -1,5 +1,5 @@
 defmodule Slackmine.Command.Iam do
-  use Slackmine.Command
+  @behaviour Slackmine.Command
 
   @rex ~r/i am/i
   @redmine_api Application.get_env(:slackmine, Slackmine.Slack)[:redmine_api]
@@ -17,12 +17,11 @@ defmodule Slackmine.Command.Iam do
     case Slackmine.Users.get(user) do
       {:ok, user} ->
         @slack_api.message([channel], "Haven't we met before, #{user}?")
-        :ok
       :error ->
         pid = spawn_link(__MODULE__, :receive_users, [channel, user])
         @redmine_api.users(pid, term)
-        :ok
     end
+    {:ok, self()}
   end
 
   def receive_users(channel, user) do

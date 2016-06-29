@@ -13,7 +13,8 @@ defmodule Slackmine do
       worker(Slackmine.Bot, [Slackmine.Bot, Slackmine.Slack]),
       worker(Slackmine.Users, []),
       worker(Slackmine.Channels, []),
-      supervisor(Slackmine.Channel.Supervisor, [])
+      supervisor(Slackmine.Channel.Supervisor, []),
+      supervisor(Slackmine.Commands, [])
     ]
 
     # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html

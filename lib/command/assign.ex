@@ -1,5 +1,5 @@
 defmodule Slackmine.Command.Assign do
-  use Slackmine.Command
+  @behaviour Slackmine.Command
 
   @rex ~r/[aA]ssign (?<issue>\S*)(?:\s*)to (?<user>\S*)/i
   @redmine_api Application.get_env(:slackmine, Slackmine.Slack)[:redmine_api]
@@ -26,12 +26,12 @@ defmodule Slackmine.Command.Assign do
             @slack_api.message([channel_str], "But who are you?")
         end
     end
+    {:ok, self()}
   end
 
   def call(%{"issue" => "#" <> id, "user" => "me"}, channel_str, user) do
     @slack_api.message([channel_str], "Assign ##{id} to #{user}")
   end
-
 
   def call(%{"issue" => "", "user" => assignee}, channel_str, _user) do
     @slack_api.message([channel_str], "Assign to #{assignee}")

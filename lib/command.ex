@@ -1,32 +1,42 @@
 defmodule Slackmine.Commands do
-  def handle_message([cmd|rest], text, channel, user) do
-    case cmd.handle_message(text, channel, user) do
-      :nomatch -> handle_message(rest, text, channel, user)
-      :ok -> :ok
+  use Supervisor
+
+  # A simple module attribute that stores the supervisor name
+  @name __MODULE__
+
+  # API
+
+  def start_link do
+    Supervisor.start_link(__MODULE__, :ok, name: @name)
+  end
+
+  def start_command(command, args, channel, user) do
+    Supervisor.start_child(@name, {{command, channel}, {command, :call, [args, channel, user]}, :transient, 2000, :worker, :dynamic})
+  end
+
+  def apply_commands([cmd|rest], text, channel, user) do
+    case cmd.parse(text) do
+      :nomatch -> apply_commands(rest, text, channel, user)
+      {:match, args} -> start_command(cmd, args, channel, user)
     end
   end
 
-  def handle_message([], _text, _channel, _user), do: :ok
+  def apply_commands([], _text, _channel, _user), do: :ok
+
+  # SERVER
+
+  def init(:ok) do
+    children = []
+
+    supervise(children, strategy: :one_for_one)
+  end
 end
 
 defmodule Slackmine.Command do
   @slack_api Slackmine.Slack
 
-  defmacro __using__(_opts) do
-    quote do
-      @behaviour Slackmine.Command
-
-      def handle_message(text, channel, user) do
-        case parse(text) do
-          :nomatch -> :nomatch
-          {:match, args} -> call(args, channel, user)
-        end
-      end
-    end
-  end
-
   @callback parse(text :: String.t) :: :nomatch | {:match, %{}}
-  @callback call(args :: %{}, channel :: String.t, user :: String.t) :: :ok
+  @callback call(args :: %{}, channel :: String.t, user :: String.t) :: {:ok, pid}
 
   def post_users(users, channel, slack_api\\Slackmine.Slack )
   def post_users([user|users], channel, slack_api) do

@@ -1,5 +1,5 @@
 defmodule Slackmine.Command.Users do
-  use Slackmine.Command
+  @behaviour Slackmine.Command
 
   @rex ~r/user/
   @redmine_api Application.get_env(:slackmine, Slackmine.Slack)[:redmine_api]
@@ -16,7 +16,7 @@ defmodule Slackmine.Command.Users do
   def call(%{term: term}, channel, _user) do
     pid = spawn_link(__MODULE__, :receive_users, [channel])
     @redmine_api.users(pid, term)
-    :ok
+    {:ok, self()}
   end
 
   def receive_users(channel) do
