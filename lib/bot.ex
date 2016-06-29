@@ -83,7 +83,7 @@ defmodule Slackmine.Bot do
 
   def handle_info({:direct_message, %{channel: channel, text: text, user: user}}, state) do
     alias Slackmine.Command
-    commands = [ Command.Users, Command.Iam, Command.Default ]
+    commands = [ Command.Users, Command.Iam, Command.Assign, Command.Default ]
     Slackmine.Commands.handle_message(commands, text, channel, user)
     {:noreply, state}
   end
