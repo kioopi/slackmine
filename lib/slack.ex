@@ -6,10 +6,18 @@ defmodule Slackmine.Slack.WithName do
   There must be a better way to do it, but i coudn't get it to work in
   Slackmine.Slack.start_link/1
   """
-  def start_link(name, bot) do
+  def start_link(bot) do
     {:ok, pid} = Slackmine.Slack.start_link(bot)
-    Process.register(pid, name)
+    Process.register(pid, Slackmine.Slack)
     {:ok, pid}
+  end
+
+  def message(channels, msg) do
+    Slackmine.Slack.message(channels, msg)
+  end
+
+  def typing(channel) do
+    Slackmine.Slack.typing(channel)
   end
 end
 
@@ -73,7 +81,7 @@ defmodule Slackmine.Slack do
   def is_direct_message?(%{text: text}, slack) do
     String.starts_with?(text, bot_name_string(slack))
   end
-  def is_direct_message?(msg, slack), do: false
+  def is_direct_message?(_msg, _slack), do: false
 
   def cut_bot_name(text, slack) do
     String.slice(text, String.length(bot_name_string(slack)), 1000) |>
@@ -140,13 +148,13 @@ defmodule Slackmine.Slack do
 end
 
 defmodule Slackmine.Slack.Mock do
-  def start_link(_name, _bot) do
+  def start_link(_bot) do
     {:ok, self()}
   end
 
   def message(_channels, _msg) do
   end
 
-  def typing(_channels, _msg) do
+  def typing(_channel) do
   end
 end

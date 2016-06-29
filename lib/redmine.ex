@@ -64,10 +64,12 @@ defmodule Slackmine.Redmine.Test do
   @behaviour Slackmine.Redmine
 
   alias Slackmine.Redmine.Issue
-  alias Slackmine.Redmine.User
-  alias Slackmine.Redmine.SelectItem
 
   def issue(from, _id) do
-    send(from, {:issue, Slackmine.Redmine.Issue.example})
+    send(from, {:issue, Issue.example})
+  end
+
+  def users(from, name) do
+    send(from, {:users, []})
   end
 end

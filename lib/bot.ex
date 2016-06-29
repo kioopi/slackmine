@@ -11,7 +11,7 @@ defmodule Slackmine.Bot do
   use GenServer
   alias Slackmine.Bot.State
 
-  @slack_api Slackmine.Slack
+  @slack_api Application.get_env(:slackmine, Slackmine.Slack)[:slack_api]
   @redmine_api Application.get_env(:slackmine, Slackmine.Slack)[:redmine_api]
 
   def start_link(name, _slack_api) do
@@ -51,10 +51,22 @@ defmodule Slackmine.Bot do
 
   Returns new state with the issue removed from prending_issues map.
   """
-  def slack_issue(id, msg, state) do
+  def post_issue(id, msg, state) do
     State.get_channels_for_pending_issue(state, id) |>
     @slack_api.message(to_string(msg))
     {:noreply, State.remove_pending_issue(state, id)}
+  end
+
+
+  def add_issue_to_channels(issue, state) do
+    State.get_channels_for_pending_issue(state, issue.id) |> add_issue(issue)
+  end
+
+  def add_issue([], _issue), do: :ok
+  def add_issue([channel_str|rest], issue) do
+    {:ok, channel} = Slackmine.Channels.get(channel_str)
+    Slackmine.Channel.add_issue(channel, issue)
+    add_issue(rest, issue)
   end
 
   # callbacks
@@ -79,14 +91,15 @@ defmodule Slackmine.Bot do
   # Slackmine.Redmine sends message {:issue, %Issue{}} when issue is
   # retrieved from redmine
   def handle_info({:issue, issue}, state) do
-    slack_issue(issue.id, issue, state)
+    add_issue_to_channels(issue, state)
+    post_issue(issue.id, issue, state)
   end
 
   def handle_info({:issue_failed, id}, state) do
-    slack_issue(id, "Could not get info on issue #{id}, sorry.", state)
+    post_issue(id, "Could not get info on issue #{id}, sorry.", state)
   end
 
   def handle_info({:issue_failed, id, reason}, state) do
-    slack_issue(id, "Could not get info on issue #{id} because of #{reason}.", state)
+    post_issue(id, "Could not get info on issue #{id} because of #{reason}.", state)
   end
 end

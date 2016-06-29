@@ -25,7 +25,7 @@ defmodule Slackmine.Command do
     end
   end
 
-  @callback parse(text :: String.t) :: any
+  @callback parse(text :: String.t) :: :nomatch | {:match, %{}}
   @callback call(args :: %{}, channel :: String.t, user :: String.t) :: :ok
 
   def post_users(users, channel, slack_api\\Slackmine.Slack )
@@ -33,7 +33,7 @@ defmodule Slackmine.Command do
     slack_api.message([channel], to_string(user))
     post_users(users, channel, slack_api)
   end
-  def post_users([], channel, slack_api), do: :ok
+  def post_users([], _channel, _slack_api), do: :ok
 
   def nl_join(enum, join \\ "and") do
     first = Enum.map(enum, &to_string/1) |>
