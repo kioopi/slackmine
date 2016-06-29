@@ -9,9 +9,11 @@ defmodule Slackmine do
     import Supervisor.Spec, warn: false
 
     children = [
-      worker(@slack_api, [Slackmine.Slack, Slackmine.Bot]),
+      worker(@slack_api, [Slackmine.Bot]),
       worker(Slackmine.Bot, [Slackmine.Bot, Slackmine.Slack]),
-      worker(Slackmine.Users, [])
+      worker(Slackmine.Users, []),
+      worker(Slackmine.Channels, []),
+      supervisor(Slackmine.Channel.Supervisor, [])
     ]
 
     # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html
