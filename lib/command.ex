@@ -11,7 +11,10 @@ defmodule Slackmine.Commands do
   end
 
   def start_command(command, args, channel, user) do
-    Supervisor.start_child(@name, {{command, channel}, {command, :call, [args, channel, user]}, :transient, 2000, :worker, :dynamic})
+    child_id = {command, channel}
+    Supervisor.delete_child(@name, child_id)
+    worker = Supervisor.Spec.worker(command, [args, channel, user], function: :call, id: child_id,  restart: :transient)
+    Supervisor.start_child(@name, worker)
   end
 
   def apply_commands([cmd|rest], text, channel, user) do
@@ -38,7 +41,10 @@ defmodule Slackmine.Command do
   @callback parse(text :: String.t) :: :nomatch | {:match, %{}}
   @callback call(args :: %{}, channel :: String.t, user :: String.t) :: {:ok, pid}
 
-  def post_users(users, channel, slack_api\\Slackmine.Slack )
+  def post_users(users, channel, slack_api\\Slackmine.Slack)
+  def post_users({:ok, users}, channel, slack_api) do
+    post_users(users, channel, slack_api)
+  end
   def post_users([user|users], channel, slack_api) do
     slack_api.message([channel], to_string(user))
     post_users(users, channel, slack_api)
@@ -50,5 +56,26 @@ defmodule Slackmine.Command do
     Enum.take(length(enum)-1) |>
     Enum.join(", ")
     Enum.join([first , List.last(enum)], " #{join} ")
+  end
+end
+
+defmodule Slackmine.Command.ResolveIssue do
+  @behaviour Slackmine.Command
+  @slack_api Slackmine.Slack
+
+  def parse(_text), do: false
+  def call({"", parent_pid}, channel_str, _user) do
+    {:ok, channel} = Slackmine.Channels.get(channel_str)
+    issues = Slackmine.Channel.get_issues(channel)
+
+    cond do
+      length(issues) == 0 ->
+        @slack_api.message([channel_str], "Can't find issue.")
+        send(parent_pid, {:notfound})
+      length(issues) > 1 ->
+        @slack_api.message([channel_str], "Too many issues.")
+        send(parent_pid, {:notfound})
+      length(issues) == 1 -> send(parent_pid, {:issue, hd(issues)})
+    end
   end
 end

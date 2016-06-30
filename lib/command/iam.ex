@@ -21,6 +21,7 @@ defmodule Slackmine.Command.Iam do
         pid = spawn_link(__MODULE__, :receive_users, [channel, user])
         @redmine_api.users(pid, term)
     end
+    Process.exit(self(), :normal)
     {:ok, self()}
   end
 

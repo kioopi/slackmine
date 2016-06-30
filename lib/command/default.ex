@@ -6,6 +6,7 @@ defmodule Slackmine.Command.Default do
 
   def call(%{text: text}, channel, _user) do
     @slack_api.message([channel], text <> "?")
+    Process.exit(self(), :normal)
     {:ok, self()}
   end
 end

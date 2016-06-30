@@ -5,6 +5,9 @@ defmodule Slackmine.Command.Users do
   @redmine_api Application.get_env(:slackmine, Slackmine.Slack)[:redmine_api]
   @slack_api Slackmine.Slack
 
+  alias Slackmine.Redmine
+  alias Slackmine.Command
+
   def parse(text) do
     if Regex.match?(@rex, text) do
       {:match, %{term: search_term(text)}}
@@ -14,15 +17,10 @@ defmodule Slackmine.Command.Users do
   end
 
   def call(%{term: term}, channel, _user) do
-    pid = spawn_link(__MODULE__, :receive_users, [channel])
-    @redmine_api.users(pid, term)
-    {:ok, self()}
-  end
+    Redmine.Data.get_users(term) |> Command.post_users(channel)
 
-  def receive_users(channel) do
-    receive do
-      {:users, users} -> Slackmine.Command.post_users(users, channel)
-    end
+    Process.exit(self(), :normal)
+    {:ok, self()}
   end
 
   defp search_term(text) do

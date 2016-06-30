@@ -7,25 +7,26 @@ defmodule Slackmine.Command.Assign do
 
   def parse(text) do
     case Regex.named_captures(@rex, text) do
-      nil -> {:nomatch}
+      nil -> :nomatch
       matches -> {:match, matches}
     end
   end
 
   def call(%{"issue" => "", "user" => "me"}, channel_str, user) do
-    {:ok, channel} = Slackmine.Channels.get(channel_str)
-    issues = Slackmine.Channel.get_issues(channel)
-    cond do
-      length(issues) == 0 -> @slack_api.message([channel_str], "Issue?")
-      length(issues) > 1 -> @slack_api.message([channel_str], "Too many issues.")
-      length(issues) == 1 ->
+    spawn_link(Slackmine.Command.ResolveIssue, :call, [{"", self()}, channel_str, user])
+
+    receive do
+      {:issue, issue} ->
         case Slackmine.Users.get(user) do
           {:ok, user} ->
-            @slack_api.message([channel_str], "Assigning ##{hd(issues).id} to #{user}")
+            @slack_api.message([channel_str], "Assigning ##{issue.id} to #{user}")
           :error ->
             @slack_api.message([channel_str], "But who are you?")
         end
+        {:notfound} -> :ok
     end
+
+    Process.exit(self(), :normal)
     {:ok, self()}
   end
 
